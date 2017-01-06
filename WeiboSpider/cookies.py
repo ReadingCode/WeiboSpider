@@ -44,6 +44,7 @@ class Cookies(object):
 
         self.pre_login_data = (servertime, nonce, pubkey, rsakv)
 
+    ###* 关键代码，模拟登录时，密码是如何加密的
     def get_password(self):
         # 创建公钥。
         key = rsa.PublicKey(int(self.pre_login_data[2], 16), 65537)

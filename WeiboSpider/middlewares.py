@@ -6,7 +6,7 @@ from . import cookies
 import random
 
 
-
+###* 请求前添加cookies信息
 class CookiesMiddleware(object):
     def __init__(self, weibo_login_info_list):
         self.cookie_list = []
@@ -14,6 +14,7 @@ class CookiesMiddleware(object):
         for info_item in weibo_login_info_list:
             self.cookie_list.append(cookies.Cookies(info_item[0], info_item[1]).get_cookie())
 
+    ###* 这是一个类方法，scrapy创建spider的时候会调用,通过传输crawler对象来传递settings
     @classmethod
     def from_crawler(cls, crawler):
         return cls(
@@ -23,6 +24,7 @@ class CookiesMiddleware(object):
     def process_request(self, request, spider):
         request.cookies = random.choice(self.cookie_list)
 
+###* 请求前添加UserAgent信息
 class UserAgentsMiddleware(object):
     def __init__(self):
         self.user_agent_list = [

@@ -5,8 +5,10 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+###* psycopg2 是 PostgreSQL 在 Python3 下的驱动 
 import sys, psycopg2, logging
 from psycopg2 import errorcodes
+###* 采用相对路径，省略包名
 from .send_email import EmailSender
 from .items import UserInfoItem, FollowItem, FanItem, \
     PostInfoItem, TextItem, ImageItem, CommentItem, ForwardItem, ThumbupItem
@@ -39,12 +41,14 @@ class WeibospiderPipeline(object):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
+    ###* 这是一个类方法，scrapy创建spider的时候会调用,通过传输crawler对象来传递settings            
     @classmethod
     def from_crawler(cls, crawler):
         return cls(
             settings = crawler.settings
         )
 
+    ###* spider创建时执行，连接数据库并创建相关表
     def open_spider(self, spider):
         # 连接到数据库。
         try:
@@ -107,6 +111,7 @@ class WeibospiderPipeline(object):
         self.connector.commit()
         self.logger.info('Table check finished!')
 
+    ###* spider结束时执行，关闭数据库，发邮件通知。
     def close_spider(self, spider):
         self.cursor.close()
         self.connector.close()
@@ -124,6 +129,7 @@ class WeibospiderPipeline(object):
                 charset = 'utf-8'
             )
 
+    ###* 处理spider返回各类item
     def process_item(self, item, spider):
         if isinstance(item, UserInfoItem):
             try:

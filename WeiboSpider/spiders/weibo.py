@@ -4,11 +4,12 @@ import scrapy, json, re, threading
 from scrapy.spiders import CrawlSpider
 from datetime import datetime, timedelta
 
+###* 采用相对路径，省略包名
 from ..items import UserInfoItem, FollowItem, FanItem, \
     PostInfoItem, TextItem, ImageItem, CommentItem, ForwardItem, ThumbupItem
 
 
-
+###* 这是一个crawl类型的，可以通过scrapy genspider crawl创建的
 class WeiboSpider(CrawlSpider):
     name = 'weibo'
     allowed_domains = ['weibo.cn']
@@ -24,6 +25,8 @@ class WeiboSpider(CrawlSpider):
         self.cur_forward_requests = 1
         self.cur_thumbup_requests = 1
 
+
+        ### 创建线程锁
         self.fan_lock = threading.Lock()
         self.follow_lock = threading.Lock()
         self.post_lock = threading.Lock()
@@ -32,16 +35,19 @@ class WeiboSpider(CrawlSpider):
         self.forward_lock = threading.Lock()
         self.thumbup_lock = threading.Lock()
 
+###* 大概就是这样的关系：[pipelines.process_item(item, spider) for item in weibo.start_requests()]
+###* weibo.start_requests() 生成item list，由pipelines进行处理。
     def start_requests(self):
         self.logger.info('start...')
 
+        ###* 将要爬取的用户id列表
         crawled_weibo_id_list = self.settings.get('CRAWLED_WEIBO_ID_LIST')
 
         for user_id in crawled_weibo_id_list:
             user_info_url = 'http://weibo.cn/' + user_id + '/info'
             yield scrapy.Request(
                 url = user_info_url,
-                meta = {'user_id': user_id},
+                meta = {'user_id': user_id}, ###* 给callback传递参数
                 callback = self.parse_user_info
             )
 
@@ -102,6 +108,7 @@ class WeiboSpider(CrawlSpider):
             if div_selector.xpath('text()') and div_selector.xpath('text()').extract_first()[:2] == '昵称':
                 break
 
+        ### 获取姓名，性别，地区等信息
         user_info_item['user_name'] = div_selector.xpath('text()[1]').extract_first()[3:]
         user_info_item['gender'] = div_selector.xpath('text()[3]').extract_first()[3:]
         user_info_item['district'] = div_selector.xpath('text()[4]').extract_first()[3:]
@@ -132,7 +139,7 @@ class WeiboSpider(CrawlSpider):
                 follow_item['size'] = len(follow_item['follow_list'])
                 yield follow_item
             else:
-                self.follow_lock.acquire()
+                self.follow_lock.acquire() ###* 多线程，保证self.cur_follow_requests同步
 
                 if self.cur_follow_requests < self.settings.get('MAX_FOLLOW_PAGES_PER_USER'):
                     self.cur_follow_requests += 1

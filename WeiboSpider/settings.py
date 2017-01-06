@@ -56,6 +56,7 @@ DEFAULT_REQUEST_HEADERS = {
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 # Use my own cookie middleware.
+###* 后面的数字表示执行顺序，小的先执行
 DOWNLOADER_MIDDLEWARES = {
     'WeiboSpider.middlewares.CookiesMiddleware': 401,
     'WeiboSpider.middlewares.UserAgentsMiddleware': 402
